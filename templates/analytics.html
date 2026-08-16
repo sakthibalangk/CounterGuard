@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h3 class="mb-0">Analytics</h3>
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('admin.analytics', days=7) }}"
+           class="btn btn-sm {{ 'btn-primary' if days == 7 else 'btn-outline-primary' }}">7 days</a>
+        <a href="{{ url_for('admin.analytics', days=14) }}"
+           class="btn btn-sm {{ 'btn-primary' if days == 14 else 'btn-outline-primary' }}">14 days</a>
+        <a href="{{ url_for('admin.analytics', days=30) }}"
+           class="btn btn-sm {{ 'btn-primary' if days == 30 else 'btn-outline-primary' }}">30 days</a>
+    </div>
+</div>
+
+<!-- Headline numbers -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fa-solid fa-barcode text-primary mb-2"></i>
+                <h4 class="mb-0">{{ summary.total_scans }}</h4>
+                <p class="text-muted small mb-0">Total Scans</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fa-solid fa-calendar-day text-primary mb-2"></i>
+                <h4 class="mb-0">{{ summary.scans_today }}</h4>
+                <p class="text-muted small mb-0">Scans Today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fa-solid fa-flag text-primary mb-2"></i>
+                <h4 class="mb-0">{{ summary.pending_reports }}</h4>
+                <p class="text-muted small mb-0">Pending Reports</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fa-solid fa-box text-primary mb-2"></i>
+                <h4 class="mb-0">{{ summary.active_products }}</h4>
+                <p class="text-muted small mb-0">Active Products</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Scans Over Time (last {{ days }} days)</h6>
+                {% if scan_counts|sum > 0 %}
+                    <canvas id="scansOverTimeChart" height="110"></canvas>
+                {% else %}
+                    <p class="text-muted text-center py-5 mb-0">No scans recorded in this period yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Genuine vs Not Found</h6>
+                {% if result_breakdown.genuine + result_breakdown.not_found > 0 %}
+                    <canvas id="resultBreakdownChart" height="220"></canvas>
+                {% else %}
+                    <p class="text-muted text-center py-5 mb-0">No scans yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Top 5 Most-Scanned Products</h6>
+                {% if top_product_counts %}
+                    <canvas id="topProductsChart" height="220"></canvas>
+                {% else %}
+                    <p class="text-muted text-center py-5 mb-0">No product scans yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Counterfeit Reports by Status</h6>
+                {% set report_total = report_breakdown.pending + report_breakdown.reviewed + report_breakdown.resolved + report_breakdown.rejected %}
+                {% if report_total > 0 %}
+                    <canvas id="reportStatusChart" height="220"></canvas>
+                {% else %}
+                    <p class="text-muted text-center py-5 mb-0">No reports filed yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const scanLabels = {{ scan_labels|tojson }};
+    const scanCounts = {{ scan_counts|tojson }};
+    const resultBreakdown = {{ result_breakdown|tojson }};
+    const reportBreakdown = {{ report_breakdown|tojson }};
+    const topProductLabels = {{ top_product_labels|tojson }};
+    const topProductCounts = {{ top_product_counts|tojson }};
+
+    const scansCanvas = document.getElementById('scansOverTimeChart');
+    if (scansCanvas) {
+        new Chart(scansCanvas, {
+            type: 'line',
+            data: {
+                labels: scanLabels,
+                datasets: [{
+                    label: 'Scans',
+                    data: scanCounts,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13,110,253,0.1)',
+                    tension: 0.3,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    }
+
+    const resultCanvas = document.getElementById('resultBreakdownChart');
+    if (resultCanvas) {
+        new Chart(resultCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Genuine', 'Not Found'],
+                datasets: [{
+                    data: [resultBreakdown.genuine, resultBreakdown.not_found],
+                    backgroundColor: ['#198754', '#dc3545'],
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    const topProductsCanvas = document.getElementById('topProductsChart');
+    if (topProductsCanvas) {
+        new Chart(topProductsCanvas, {
+            type: 'bar',
+            data: {
+                labels: topProductLabels,
+                datasets: [{
+                    label: 'Scans',
+                    data: topProductCounts,
+                    backgroundColor: '#0d6efd',
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    }
+
+    const reportStatusCanvas = document.getElementById('reportStatusChart');
+    if (reportStatusCanvas) {
+        new Chart(reportStatusCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Reviewed', 'Resolved', 'Rejected'],
+                datasets: [{
+                    data: [
+                        reportBreakdown.pending,
+                        reportBreakdown.reviewed,
+                        reportBreakdown.resolved,
+                        reportBreakdown.rejected
+                    ],
+                    backgroundColor: ['#ffc107', '#0dcaf0', '#198754', '#6c757d'],
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+})();
+</script>
+{% endblock %}

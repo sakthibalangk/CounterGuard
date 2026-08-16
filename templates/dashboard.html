@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-0">Welcome, {{ user.full_name }}</h3>
+        <p class="text-muted mb-0">@{{ user.username }} &middot; {{ user.email }}</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <a href="{{ url_for('scan.scan_page') }}" class="text-decoration-none text-dark">
+            <div class="card cg-card-hover shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="fa-solid fa-barcode fa-2x text-primary mb-3"></i>
+                    <h5>Scan a Barcode</h5>
+                    <p class="text-muted small">Verify a product's authenticity in seconds.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('scan.scan_history') }}" class="text-decoration-none text-dark">
+            <div class="card cg-card-hover shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="fa-solid fa-clock-rotate-left fa-2x text-primary mb-3"></i>
+                    <h5>Scan History</h5>
+                    <p class="text-muted small">Review everything you've scanned before.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('report.report_history') }}" class="text-decoration-none text-dark">
+            <div class="card cg-card-hover shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x text-primary mb-3"></i>
+                    <h5>Report a Fake</h5>
+                    <p class="text-muted small">Flag a suspected counterfeit product.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

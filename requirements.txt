@@ -1,0 +1,11 @@
+Flask
+Flask-WTF
+Flask-Limiter
+mysql-connector-python
+Werkzeug
+opencv-python-headless
+zxing-cpp
+Pillow
+python-dotenv
+python-barcode
+gunicorn

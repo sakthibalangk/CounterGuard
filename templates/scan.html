@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Scan a Barcode{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <h3 class="mb-1"><i class="fa-solid fa-barcode text-primary me-2"></i>Verify a Product</h3>
+        <p class="text-muted mb-4">Scan with your camera, upload a photo, or type the barcode in directly.</p>
+
+        <ul class="nav nav-tabs" id="scanTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera-pane" type="button">
+                    <i class="fa-solid fa-camera me-1"></i> Camera
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-pane" type="button">
+                    <i class="fa-solid fa-upload me-1"></i> Upload Photo
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-pane" type="button">
+                    <i class="fa-solid fa-keyboard me-1"></i> Enter Manually
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content border border-top-0 rounded-bottom p-4 bg-white shadow-sm">
+
+            <!-- Camera tab -->
+            <div class="tab-pane fade show active" id="camera-pane" role="tabpanel">
+                <div id="cameraNotice" class="alert alert-secondary small d-none"></div>
+                <div class="text-center">
+                    <video id="cameraVideo" class="w-100 rounded bg-dark" style="max-height:320px; display:none;" autoplay playsinline muted></video>
+                    <canvas id="cameraCanvas" class="d-none"></canvas>
+                </div>
+                <div class="d-flex gap-2 mt-3 justify-content-center">
+                    <button type="button" id="startCameraBtn" class="btn btn-outline-primary">
+                        <i class="fa-solid fa-video me-1"></i> Start Camera
+                    </button>
+                    <button type="button" id="captureBtn" class="btn btn-primary d-none">
+                        <i class="fa-solid fa-camera me-1"></i> Capture &amp; Verify
+                    </button>
+                </div>
+                <form id="cameraForm" method="POST" action="{{ url_for('scan.verify_barcode') }}" class="d-none">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="captured_image" id="capturedImageInput">
+                </form>
+                <p class="text-muted small text-center mt-3 mb-0">
+                    Camera access requires a secure context — it works on <code>localhost</code>,
+                    but browsers block it over a plain <code>http://&lt;ip-address&gt;</code> URL.
+                    If the camera won't start, use Upload Photo or Enter Manually instead.
+                </p>
+            </div>
+
+            <!-- Upload tab -->
+            <div class="tab-pane fade" id="upload-pane" role="tabpanel">
+                <form method="POST" action="{{ url_for('scan.verify_barcode') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Photo of the barcode</label>
+                        <input type="file" name="barcode_image" class="form-control" accept=".png,.jpg,.jpeg,.webp" required>
+                        <div class="form-text">A clear, well-lit, close-up photo works best.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Verify Photo
+                    </button>
+                </form>
+            </div>
+
+            <!-- Manual entry tab -->
+            <div class="tab-pane fade" id="manual-pane" role="tabpanel">
+                <form method="POST" action="{{ url_for('scan.verify_barcode') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Barcode value</label>
+                        <input type="text" name="manual_barcode" class="form-control" placeholder="e.g. CG4839201957" required>
+                        <div class="form-text">Printed underneath or near the barcode on the product's packaging.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Verify
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const startBtn = document.getElementById("startCameraBtn");
+    const captureBtn = document.getElementById("captureBtn");
+    const video = document.getElementById("cameraVideo");
+    const canvas = document.getElementById("cameraCanvas");
+    const notice = document.getElementById("cameraNotice");
+    const form = document.getElementById("cameraForm");
+    const input = document.getElementById("capturedImageInput");
+
+    let stream = null;
+
+    function showNotice(message) {
+        notice.textContent = message;
+        notice.classList.remove("d-none");
+    }
+
+    startBtn.addEventListener("click", async () => {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showNotice("Your browser does not support camera access here. Please use Upload Photo or Enter Manually.");
+            return;
+        }
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
+            });
+            video.srcObject = stream;
+            video.style.display = "block";
+            startBtn.classList.add("d-none");
+            captureBtn.classList.remove("d-none");
+        } catch (err) {
+            showNotice(
+                "Could not access the camera (permission denied, no camera found, " +
+                "or this page isn't loaded over a secure context). Try Upload Photo or Enter Manually instead."
+            );
+        }
+    });
+
+    captureBtn.addEventListener("click", () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        input.value = canvas.toDataURL("image/jpeg", 0.9);
+
+        if (stream) {
+            stream.getTracks().forEach((track) => track.stop());
+        }
+
+        form.classList.remove("d-none");
+        form.submit();
+    });
+})();
+</script>
+{% endblock %}

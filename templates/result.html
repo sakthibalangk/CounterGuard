@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Verification Result{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        {% if result_status == 'genuine' %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 text-center">
+                <i class="fa-solid fa-circle-check text-success" style="font-size: 3rem;"></i>
+                <h3 class="mt-3 text-success">Genuine Product</h3>
+                <p class="text-muted">This barcode matches a verified product in our database.</p>
+            </div>
+            <div class="card-body border-top">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        {% if product.product_image_path %}
+                            <img src="{{ url_for('static', filename='uploads/' + product.product_image_path) }}"
+                                 alt="{{ product.name }}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;">
+                        {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:90px;height:90px;">
+                                <i class="fa-solid fa-image text-muted fa-lg"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col">
+                        <h5 class="mb-1">{{ product.name }}</h5>
+                        <p class="text-muted mb-1">{{ product.brand }}
+                            {% if product.category %} &middot; {{ product.category }}{% endif %}</p>
+                        <p class="mb-0"><code>{{ product.barcode_value }}</code></p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <dl class="row mb-0 small">
+                    {% if product.manufacturer %}
+                    <dt class="col-sm-4 text-muted">Manufacturer</dt>
+                    <dd class="col-sm-8">{{ product.manufacturer }}</dd>
+                    {% endif %}
+                    {% if product.price %}
+                    <dt class="col-sm-4 text-muted">Price</dt>
+                    <dd class="col-sm-8">₹{{ "%.2f"|format(product.price) }}</dd>
+                    {% endif %}
+                    {% if product.manufacture_date %}
+                    <dt class="col-sm-4 text-muted">Manufactured</dt>
+                    <dd class="col-sm-8">{{ product.manufacture_date }}</dd>
+                    {% endif %}
+                    {% if product.expiry_date %}
+                    <dt class="col-sm-4 text-muted">Expires</dt>
+                    <dd class="col-sm-8">{{ product.expiry_date }}</dd>
+                    {% endif %}
+                    {% if product.description %}
+                    <dt class="col-sm-4 text-muted">Description</dt>
+                    <dd class="col-sm-8">{{ product.description }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+            <div class="card-body border-top text-center">
+                <p class="text-muted small mb-2">Barcode checks out, but something about the physical item still seems off?</p>
+                <a href="{{ url_for('report.submit_report', barcode=product.barcode_value) }}" class="btn btn-outline-danger btn-sm">
+                    <i class="fa-solid fa-flag me-1"></i> Report This Product Anyway
+                </a>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 text-center">
+                <i class="fa-solid fa-triangle-exclamation text-danger" style="font-size: 3rem;"></i>
+                <h3 class="mt-3 text-danger">No Match Found</h3>
+                <p class="text-muted mb-1">
+                    We couldn't find any registered product for this barcode:
+                </p>
+                <p><code>{{ barcode_value }}</code></p>
+                <p class="text-muted small">
+                    This could mean the product isn't in our database yet, or it could be counterfeit.
+                    If you believe this is a fake product, please report it.
+                </p>
+                <a href="{{ url_for('report.submit_report', barcode=barcode_value) }}" class="btn btn-danger">
+                    <i class="fa-solid fa-flag me-1"></i> Report This Product
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="text-center mt-4">
+            <a href="{{ url_for('scan.scan_page') }}" class="btn btn-outline-primary">
+                <i class="fa-solid fa-rotate me-1"></i> Scan Another
+            </a>
+            <a href="{{ url_for('auth.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-house me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

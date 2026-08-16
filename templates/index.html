@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <i class="fa-solid fa-shield-halved text-primary" style="font-size: 3.5rem;"></i>
+    <h1 class="mt-3">CounterGuard</h1>
+    <p class="lead text-muted">Smart Fake Product Detection &amp; Verification System using Barcode</p>
+</div>
+
+<div class="row justify-content-center g-4 mb-5">
+    <div class="col-md-5">
+        <div class="card cg-card-hover shadow-sm border-0 h-100 text-center">
+            <div class="card-body p-4">
+                <i class="fa-solid fa-user fa-2x text-primary mb-3"></i>
+                <h5>Customer Portal</h5>
+                <p class="text-muted small">Scan a barcode, verify a product, and report counterfeits.</p>
+                {% if session.get('role') == 'customer' %}
+                    <a href="{{ url_for('auth.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary me-2">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card cg-card-hover shadow-sm border-0 h-100 text-center">
+            <div class="card-body p-4">
+                <i class="fa-solid fa-user-shield fa-2x text-dark mb-3"></i>
+                <h5>Admin Portal</h5>
+                <p class="text-muted small">Manage products, barcodes, users, and counterfeit reports.</p>
+                {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-dark">Go to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('admin.admin_login') }}" class="btn btn-dark">Admin Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

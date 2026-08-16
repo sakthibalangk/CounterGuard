@@ -1,0 +1,31 @@
+/* ============================================================
+   CounterGuard — global stylesheet
+   Portal-specific styles will be added as each module is built.
+   ============================================================ */
+
+:root {
+    --cg-primary: #0d6efd;
+    --cg-success: #198754;
+    --cg-danger: #dc3545;
+}
+
+body {
+    background-color: #f4f6f9;
+}
+
+main {
+    flex: 1;
+}
+
+.navbar-brand i {
+    color: #fff;
+}
+
+/* Utility: subtle card hover lift, reused across dashboards */
+.cg-card-hover {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cg-card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}

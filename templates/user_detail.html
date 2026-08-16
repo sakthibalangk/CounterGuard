@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ user.full_name }}{% endblock %}
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('admin.list_users') }}" class="text-decoration-none">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Customers
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-circle-user fa-3x text-primary mb-3"></i>
+                <h5 class="mb-0">{{ user.full_name }}</h5>
+                <p class="text-muted mb-2">@{{ user.username }}</p>
+                {% if user.is_active %}
+                    <span class="badge bg-success mb-3">Active</span>
+                {% else %}
+                    <span class="badge bg-secondary mb-3">Deactivated</span>
+                {% endif %}
+
+                <dl class="row text-start small mb-3">
+                    <dt class="col-5 text-muted">Email</dt>
+                    <dd class="col-7">{{ user.email }}</dd>
+                    {% if user.phone %}
+                    <dt class="col-5 text-muted">Phone</dt>
+                    <dd class="col-7">{{ user.phone }}</dd>
+                    {% endif %}
+                    <dt class="col-5 text-muted">Joined</dt>
+                    <dd class="col-7">{{ user.created_at.strftime('%d %b %Y') }}</dd>
+                </dl>
+
+                <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}"
+                      onsubmit="return confirm('{{ 'Deactivate' if user.is_active else 'Reactivate' }} this account?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn w-100 {{ 'btn-outline-danger' if user.is_active else 'btn-outline-success' }}">
+                        {% if user.is_active %}
+                            <i class="fa-solid fa-user-slash me-1"></i> Deactivate Account
+                        {% else %}
+                            <i class="fa-solid fa-user-check me-1"></i> Reactivate Account
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <i class="fa-solid fa-barcode text-primary mb-2"></i>
+                        <h4 class="mb-0">{{ activity.scan_count }}</h4>
+                        <p class="text-muted small mb-0">Total Scans</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <i class="fa-solid fa-flag text-primary mb-2"></i>
+                        <h4 class="mb-0">{{ activity.report_count }}</h4>
+                        <p class="text-muted small mb-0">Reports Filed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <strong>Recent Scans</strong>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_scans %}
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Barcode</th>
+                            <th>Product</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in recent_scans %}
+                        <tr>
+                            <td class="small">{{ scan.scanned_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td><code>{{ scan.barcode_value }}</code></td>
+                            <td class="small">
+                                {% if scan.product_name %}{{ scan.product_name }}{% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if scan.result_status == 'genuine' %}
+                                    <span class="badge bg-success">Genuine</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Not Found</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0">No scans yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

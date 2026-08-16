@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Counterfeit Reports{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h3 class="mb-0">Counterfeit Reports <span class="text-muted fs-6">({{ total }} total)</span></h3>
+</div>
+
+<div class="mb-4">
+    <div class="btn-group flex-wrap" role="group">
+        <a href="{{ url_for('admin.list_reports') }}"
+           class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-primary' }}">All</a>
+        <a href="{{ url_for('admin.list_reports', status='pending') }}"
+           class="btn btn-sm {{ 'btn-warning' if status_filter == 'pending' else 'btn-outline-warning' }}">Pending</a>
+        <a href="{{ url_for('admin.list_reports', status='reviewed') }}"
+           class="btn btn-sm {{ 'btn-info' if status_filter == 'reviewed' else 'btn-outline-info' }}">Reviewed</a>
+        <a href="{{ url_for('admin.list_reports', status='resolved') }}"
+           class="btn btn-sm {{ 'btn-success' if status_filter == 'resolved' else 'btn-outline-success' }}">Resolved</a>
+        <a href="{{ url_for('admin.list_reports', status='rejected') }}"
+           class="btn btn-sm {{ 'btn-secondary' if status_filter == 'rejected' else 'btn-outline-secondary' }}">Rejected</a>
+    </div>
+</div>
+
+{% if reports %}
+{% for report in reports %}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <code>{{ report.barcode_value }}</code>
+                    {% if report.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif report.status == 'reviewed' %}
+                        <span class="badge bg-info text-dark">Reviewed</span>
+                    {% elif report.status == 'resolved' %}
+                        <span class="badge bg-success">Resolved</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Rejected</span>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-1">
+                    Reported by {{ report.reporter_name }} ({{ report.reporter_email }})
+                    on {{ report.reported_at.strftime('%d %b %Y, %I:%M %p') }}
+                </p>
+                {% if report.product_name %}
+                <p class="text-muted small mb-1">
+                    Matched product: <strong>{{ report.product_name }}</strong> ({{ report.product_brand }})
+                </p>
+                {% else %}
+                <p class="text-muted small mb-1">No matching product in catalog for this barcode.</p>
+                {% endif %}
+            </div>
+            <button class="btn btn-sm btn-outline-primary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#review-{{ report.id }}">
+                <i class="fa-solid fa-magnifying-glass me-1"></i> Review
+            </button>
+        </div>
+
+        <div class="collapse mt-3" id="review-{{ report.id }}">
+            <hr>
+            <p><strong>Description:</strong><br>{{ report.description }}</p>
+
+            {% if report.evidence_image %}
+            <p>
+                <strong>Evidence photo:</strong><br>
+                <img src="{{ url_for('static', filename='uploads/' + report.evidence_image) }}"
+                     alt="Evidence" style="max-width:220px; border-radius:8px;" class="mt-1">
+            </p>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('admin.update_report', report_id=report.id) }}" class="row g-2 mt-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="pending" {{ 'selected' if report.status == 'pending' }}>Pending</option>
+                        <option value="reviewed" {{ 'selected' if report.status == 'reviewed' }}>Reviewed</option>
+                        <option value="resolved" {{ 'selected' if report.status == 'resolved' }}>Resolved</option>
+                        <option value="rejected" {{ 'selected' if report.status == 'rejected' }}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" name="admin_notes" class="form-control"
+                           placeholder="Notes (optional)" value="{{ report.admin_notes or '' }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if total_pages > 1 %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% for p in range(1, total_pages + 1) %}
+        <li class="page-item {{ 'active' if p == page else '' }}">
+            <a class="page-link" href="{{ url_for('admin.list_reports', status=status_filter, page=p) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="fa-solid fa-flag fa-2x mb-3"></i>
+    <p>
+        {% if status_filter %}No reports with status "{{ status_filter }}".{% else %}No reports yet.{% endif %}
+    </p>
+</div>
+{% endif %}
+{% endblock %}

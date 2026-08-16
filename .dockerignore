@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.git/
+.gitignore
+logs/
+static/uploads/*
+!static/uploads/.gitkeep
+static/barcodes/*
+!static/barcodes/.gitkeep
+*.zip
